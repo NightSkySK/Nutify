@@ -1,0 +1,23 @@
+# Node / frontend build artifacts
+node_modules/
+dist/
+frontend-dist/
+*.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Diagnostic log dumps and runtime logs
+logs*/
+*.log
+
+# Local instance/data
+instance/
+*.db.sqlite
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
