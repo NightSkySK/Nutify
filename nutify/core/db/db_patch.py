@@ -477,3 +477,29 @@ def ensure_provider_render_mode_schema(db):
         logger.error(f"❌ Error while checking provider render_mode schema: {exc}", exc_info=True)
         db.session.rollback()
         return False
+
+
+def ensure_mail_subject_template_schema(db):
+    """Ensure nutify_master_control exposes the mail_subject_template column."""
+    logger.info("🔍 Checking mail subject template schema...")
+    table_name = 'nutify_master_control'
+
+    try:
+        inspector = inspect(db.engine)
+        if table_name not in set(inspector.get_table_names()):
+            logger.info(f"ℹ️ Skipping missing table: {table_name}")
+            return True
+
+        with db.engine.begin() as conn:
+            table_info = conn.execute(text(f"PRAGMA table_info('{table_name}')")).fetchall()
+            column_names = {row[1] for row in table_info}
+            if 'mail_subject_template' not in column_names:
+                logger.warning(f"⚠️ Adding missing mail_subject_template column on {table_name}")
+                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN mail_subject_template VARCHAR(255)"))
+
+        logger.info("✅ Mail subject template schema check completed")
+        return True
+    except Exception as exc:
+        logger.error(f"❌ Error while checking mail subject template schema: {exc}", exc_info=True)
+        db.session.rollback()
+        return False

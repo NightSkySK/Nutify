@@ -339,6 +339,17 @@ export async function testEmailNotification(eventType: string, idEmail: number, 
   )
 }
 
+export async function getMailSubjectTemplate() {
+  return requestSettingsJson('/api/settings/mail/subject-template')
+}
+
+export async function saveMailSubjectTemplate(template: string) {
+  return requestSettingsJson('/api/settings/mail/subject-template', {
+    method: 'POST',
+    body: JSON.stringify({ template }),
+  })
+}
+
 export type ReportSchedulePayload = {
   id?: number
   time: string

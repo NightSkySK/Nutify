@@ -9,6 +9,7 @@ import { useMemo } from 'react'
 import { MailConfigPanel } from './mail/MailConfigPanel'
 import { MailNotificationsPanel } from './mail/MailNotificationsPanel'
 import { MailReportSchedulerPanel } from './mail/MailReportSchedulerPanel'
+import { MailSubjectTemplatePanel } from './mail/MailSubjectTemplatePanel'
 import { useMailSectionController } from './mail/useMailSectionController'
 
 type MailSectionProps = {
@@ -135,6 +136,8 @@ export function MailSection({
             onTest={handleNotificationTest}
           />
         ) : null}
+
+        {showNotifications ? <MailSubjectTemplatePanel /> : null}
 
         {showReports ? (
           <MailReportSchedulerPanel

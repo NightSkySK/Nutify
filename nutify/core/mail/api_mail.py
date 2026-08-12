@@ -16,6 +16,7 @@ from .provider import (
 )
 from core.logger import web_logger as logger
 from core.multi_nut.target_scope import apply_target_scope, resolve_settings_target_id
+from core.notifications import DEFAULT_MAIL_SUBJECT_TEMPLATE
 
 
 def _mail_scoped_query(mail_model, target_id=None):
@@ -37,6 +38,34 @@ def _schedule_scoped_query(schedule_model, target_id=None):
 def register_mail_api_routes(app):
     """Register all email-related API routes."""
     
+    @app.route('/api/settings/mail/subject-template', methods=['GET', 'POST'])
+    def mail_subject_template_settings():
+        """Get or update the global email subject template."""
+        try:
+            MasterControl = db.ModelClasses.NutifyMasterControl
+            if request.method == 'GET':
+                template = MasterControl.get_mail_subject_template()
+                return jsonify({
+                    'success': True,
+                    'data': {
+                        'template': template,
+                        'default_template': DEFAULT_MAIL_SUBJECT_TEMPLATE,
+                    }
+                })
+
+            data = request.json or {}
+            template = str(data.get('template') or '').strip()
+            MasterControl.create_or_update({'mail_subject_template': template})
+            return jsonify({
+                'success': True,
+                'data': {
+                    'template': template or DEFAULT_MAIL_SUBJECT_TEMPLATE,
+                }
+            })
+        except Exception as e:
+            logger.error(f"Error handling mail subject template: {str(e)}", exc_info=True)
+            return jsonify({'success': False, 'error': str(e)}), 500
+
     @app.route('/api/settings/mail', methods=['GET'])
     def get_mail_config():
         """Return the current email configuration for the active target scope."""

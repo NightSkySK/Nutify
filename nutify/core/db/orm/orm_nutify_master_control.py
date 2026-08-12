@@ -34,6 +34,7 @@ class NutifyMasterControl:
     server_name = Column(String(100), nullable=False, default="Nutify")
     monitoring_profile = Column(String(20), nullable=False, default=PROFILE_SINGLE)
     is_configured = Column(Boolean, nullable=False, default=False)
+    mail_subject_template = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(pytz.UTC))
     updated_at = Column(
         DateTime(timezone=True),
@@ -71,6 +72,14 @@ class NutifyMasterControl:
         return normalize_monitoring_profile(getattr(config, "monitoring_profile", None))
 
     @classmethod
+    def get_mail_subject_template(cls) -> str:
+        """Return the configured mail subject template, or empty string when unset."""
+        config = cls.get_current_config()
+        if not config:
+            return ""
+        return str(getattr(config, "mail_subject_template", "") or "").strip()
+
+    @classmethod
     def is_setup_complete(cls) -> bool:
         """Return True when at least one configured row exists."""
         try:
@@ -94,6 +103,8 @@ class NutifyMasterControl:
             config.monitoring_profile = normalize_monitoring_profile(config_data.get("monitoring_profile"))
         if "is_configured" in config_data:
             config.is_configured = bool(config_data.get("is_configured"))
+        if "mail_subject_template" in config_data:
+            config.mail_subject_template = str(config_data.get("mail_subject_template") or "").strip() or None
 
         session.commit()
         return config

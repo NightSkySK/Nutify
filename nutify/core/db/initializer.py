@@ -12,7 +12,7 @@ from flask import current_app
 import pytz
 
 from .integrity import check_database_integrity
-from .db_patch import ensure_provider_render_mode_schema
+from .db_patch import ensure_provider_render_mode_schema, ensure_mail_subject_template_schema
 from core.logger import system_logger as logger
 from core.db.model_classes import init_model_classes, register_models_for_global_access
 
@@ -412,6 +412,16 @@ def init_database(app, db):
         except Exception as provider_schema_error:
             logger.warning(
                 f"⚠️ Provider render-mode schema pre-check failed: {provider_schema_error}"
+            )
+
+        # Step 4.6: Ensure mail subject template column is in place
+        logger.info("🧩 Step 4.6: Ensuring mail subject template schema...")
+        try:
+            ensure_mail_subject_template_schema(db)
+            logger.info("✅ Mail subject template schema ready")
+        except Exception as subject_template_schema_error:
+            logger.warning(
+                f"⚠️ Mail subject template schema pre-check failed: {subject_template_schema_error}"
             )
 
         # Step 5: Check database integrity

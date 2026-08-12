@@ -301,16 +301,42 @@ def render_mail_text_from_card(card: Dict[str, Any]) -> str:
     return "\n".join(line for line in lines if line)
 
 
+DEFAULT_MAIL_SUBJECT_TEMPLATE = "{server_name} - UPS Event: {event_code}"
+
+
+def get_mail_subject_template() -> str:
+    """Return the user-configured mail subject template, or the built-in default."""
+    try:
+        from core.db.ups import db
+
+        if hasattr(db, 'ModelClasses') and hasattr(db.ModelClasses, 'NutifyMasterControl'):
+            config = db.ModelClasses.NutifyMasterControl.get_current_config()
+            template = str(getattr(config, 'mail_subject_template', '') or '').strip()
+            if template:
+                return template
+    except Exception:
+        pass
+    return DEFAULT_MAIL_SUBJECT_TEMPLATE
+
+
 def render_mail_subject_from_card(card: Dict[str, Any], fallback_event_type: str = 'UPS EVENT') -> str:
     context = card.get('context') or {}
     server_name = str(context.get('serverName') or '').strip()
     target_name = str(context.get('targetName') or '').strip()
     title = str(card.get('title') or fallback_event_type or 'UPS EVENT').strip()
+    event_code = str(card.get('type') or fallback_event_type or 'UPS EVENT').strip()
 
-    scope = target_name or server_name
-    if scope:
-        return f"{scope} - {title}"
-    return title
+    template = get_mail_subject_template()
+    try:
+        return template.format(
+            server_name=server_name or target_name or 'Nutify',
+            target_name=target_name or server_name or 'Nutify',
+            event_code=event_code,
+            event_title=title,
+        ).strip()
+    except Exception:
+        scope = target_name or server_name
+        return f"{scope} - {title}" if scope else title
 
 
 def render_mail_html_from_card(card: Dict[str, Any]) -> str:
