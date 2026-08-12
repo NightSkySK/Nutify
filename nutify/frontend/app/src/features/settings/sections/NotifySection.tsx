@@ -7,6 +7,7 @@
 import { useMemo, useState } from 'react'
 
 import { useAppStore } from '../../../store/appStore'
+import { MailSubjectTemplatePanel } from './mail/MailSubjectTemplatePanel'
 import { useMailSectionController } from './mail/useMailSectionController'
 import { useNtfySectionController } from './ntfy/useNtfySectionController'
 import { LEGACY_NOTIFICATION_EVENTS } from './shared/notificationEvents'
@@ -351,6 +352,8 @@ export function NotifySection() {
           </div>
         ) : null}
       </div>
+
+      <MailSubjectTemplatePanel />
     </>
   )
 }

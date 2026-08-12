@@ -3,13 +3,13 @@ name: Build and publish Docker images to GHCR
 on:
   push:
     branches:
-      - '**'
+      - "**"
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Branch or tag to build (defaults to the branch that triggered the run)'
+        description: "Branch or tag to build (defaults to the branch that triggered the run)"
         required: false
         type: string
 
@@ -32,9 +32,9 @@ jobs:
           - dockerfile: Dockerfile/Dockerfile.MacArm64
             arch_tag: macarm64
             platform: linux/arm64
-          - dockerfile: Dockerfile/Dockerfile.RaspberryPi4
-            arch_tag: rpi4
-            platform: linux/arm64
+          # - dockerfile: Dockerfile/Dockerfile.RaspberryPi4
+          #   arch_tag: rpi4
+          #   platform: linux/arm64
           - dockerfile: Dockerfile/Dockerfile.RaspberryPi5
             arch_tag: rpi5
             platform: linux/arm64
