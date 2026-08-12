@@ -1,0 +1,80 @@
+name: Build and publish Docker images to GHCR
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or tag to build (defaults to the branch that triggered the run)'
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dockerfile: Dockerfile/Dockerfile.AMD64
+            arch_tag: amd64
+            platform: linux/amd64
+          - dockerfile: Dockerfile/Dockerfile.MacArm64
+            arch_tag: macarm64
+            platform: linux/arm64
+          - dockerfile: Dockerfile/Dockerfile.RaspberryPi4
+            arch_tag: rpi4
+            platform: linux/arm64
+          - dockerfile: Dockerfile/Dockerfile.RaspberryPi5
+            arch_tag: rpi5
+            platform: linux/arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Sanitize ref name for tagging
+        id: ref
+        run: |
+          RAW_REF="${{ github.ref_name }}"
+          SAFE_REF=$(echo "$RAW_REF" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          echo "safe_ref=$SAFE_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.ref.outputs.safe_ref }}-${{ matrix.arch_tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-${{ matrix.arch_tag }}
+          cache-from: type=gha,scope=${{ matrix.arch_tag }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch_tag }}

@@ -39,7 +39,7 @@ import pytz
 import sqlite3
 from sqlalchemy import text, inspect
 import json
-from core.multi_nut.target_scope import apply_target_scope, resolve_settings_target_id
+from core.multi_nut.target_scope import apply_target_scope, resolve_settings_target_id, is_multi_profile
 from core.multi_nut.storage_snapshots import extract_metric, get_latest_target_snapshot, infer_error_status
 
 # Add the application directory to sys.path to allow imports
@@ -2108,6 +2108,11 @@ def process_ups_event(ups_name, event_type):
     """Process a UPS event and send notifications"""
     try:
         target_id = resolve_target_id_for_ups_name(ups_name)
+        # Notification settings (email/ntfy/telegram/webhook) are saved through the web UI,
+        # which only scopes them to a real target_id in "multi" profile (see resolve_settings_target_id).
+        # Outside multi profile the bootstrapped primary target still has a real id, so it must be
+        # nulled out here too, or lookups below would never match the saved (target_id=NULL) rows.
+        settings_target_id = target_id if is_multi_profile() else None
         normalized_event = normalize_event_code(event_type)
         unified_card = build_unified_notification_card_for_event(
             ups_name,
@@ -2121,13 +2126,13 @@ def process_ups_event(ups_name, event_type):
             return False
             
         # Get enabled email notifications
-        notifications = get_enabled_notifications(normalized_event, target_id=target_id)
+        notifications = get_enabled_notifications(normalized_event, target_id=settings_target_id)
         
         # Get enabled ntfy configurations
-        ntfy_configs = get_enabled_ntfy_configs(normalized_event, target_id=target_id)
+        ntfy_configs = get_enabled_ntfy_configs(normalized_event, target_id=settings_target_id)
 
         # Get enabled Telegram configurations
-        telegram_configs = get_enabled_telegram_configs(normalized_event, target_id=target_id)
+        telegram_configs = get_enabled_telegram_configs(normalized_event, target_id=settings_target_id)
             
         # Check if we have any notifications to send
         if not notifications and not ntfy_configs and not telegram_configs and not HAS_WEBHOOK:
@@ -2201,7 +2206,7 @@ def process_ups_event(ups_name, event_type):
                     # Force a more detailed log for debugging
                     try:
                         from core.extranotifs.webhook.db import get_enabled_configs_for_event
-                        enabled_configs = get_enabled_configs_for_event(event_type, target_id=target_id)
+                        enabled_configs = get_enabled_configs_for_event(event_type, target_id=settings_target_id)
                         
                         if enabled_configs:
                             logger.info(f"Found {len(enabled_configs)} webhook configurations for {event_type}")
@@ -2217,7 +2222,7 @@ def process_ups_event(ups_name, event_type):
                 result = send_webhook_notification(
                     normalized_event,
                     ups_name,
-                    target_id=target_id,
+                    target_id=settings_target_id,
                     event_data=webhook_event_data,
                 )
                 if result.get('success'):
