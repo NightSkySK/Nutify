@@ -309,8 +309,8 @@ def get_mail_subject_template() -> str:
     try:
         from core.db.ups import db
 
-        if hasattr(db, 'ModelClasses') and hasattr(db.ModelClasses, 'NutifyMasterControl'):
-            config = db.ModelClasses.NutifyMasterControl.get_current_config()
+        if hasattr(db, 'ModelClasses') and hasattr(db.ModelClasses, 'MasterControl'):
+            config = db.ModelClasses.MasterControl.get_current_config()
             template = str(getattr(config, 'mail_subject_template', '') or '').strip()
             if template:
                 return template

@@ -42,7 +42,7 @@ def register_mail_api_routes(app):
     def mail_subject_template_settings():
         """Get or update the global email subject template."""
         try:
-            MasterControl = db.ModelClasses.NutifyMasterControl
+            MasterControl = db.ModelClasses.MasterControl
             if request.method == 'GET':
                 template = MasterControl.get_mail_subject_template()
                 return jsonify({
