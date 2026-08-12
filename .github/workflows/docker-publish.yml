@@ -15,7 +15,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
@@ -42,16 +41,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
 
-      - name: Sanitize ref name for tagging
+      - name: Sanitize ref name and image name for tagging
         id: ref
         run: |
           RAW_REF="${{ github.ref_name }}"
           SAFE_REF=$(echo "$RAW_REF" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
           echo "safe_ref=$SAFE_REF" >> "$GITHUB_OUTPUT"
+          echo "image_name=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -74,7 +74,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.ref.outputs.safe_ref }}-${{ matrix.arch_tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-${{ matrix.arch_tag }}
+            ${{ env.REGISTRY }}/${{ steps.ref.outputs.image_name }}:${{ steps.ref.outputs.safe_ref }}-${{ matrix.arch_tag }}
+            ${{ env.REGISTRY }}/${{ steps.ref.outputs.image_name }}:${{ github.sha }}-${{ matrix.arch_tag }}
           cache-from: type=gha,scope=${{ matrix.arch_tag }}
           cache-to: type=gha,mode=max,scope=${{ matrix.arch_tag }}
